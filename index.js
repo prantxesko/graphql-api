@@ -1,10 +1,31 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import "./API/ot.js";
+//import "./API/ot.js";
 
+const typeDefs = `
+type Ot {
+  id: ID
+  otNumber: String
+  description: String
+  
+}
+type Query {
+  test: String
+  ots: [Ot]
+  ot(id: String): Ot
+}
+`;
+
+const resolvers = {
+  Query:{
+    test: ()=>"Hola mundo",
+    ots: ()=>[],
+    ot: id => ({id:"TEST"})
+  }
+}
 const server = new ApolloServer({
-  typeDefs:[ otTypeDefs, parteTypeDefs],
-  resolvers: [otResolvers, parteResolvers],
+  typeDefs:[ typeDefs],
+  resolvers,
   introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== 'production', //Evita que se sepa cómo es la API en producción
   
   
