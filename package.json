@@ -1,0 +1,26 @@
+{
+  "name": "graphql-api",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Graphql wrapper for Cobertec API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prantxesko/graphql-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/prantxesko/graphql-api/issues"
+  },
+  "homepage": "https://github.com/prantxesko/graphql-api#readme",
+  "dependencies": {
+    "@apollo/server": "^4.9.1",
+    "express": "^4.18.2",
+    "graphql": "^16.8.0"
+  }
+}
