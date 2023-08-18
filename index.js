@@ -1,31 +1,11 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-//import "./API/ot.js";
+import { typeDefs as otTypeDefs, resolvers as otResolvers } from "./GRAPHQL/ot.js";
 
-const typeDefs = `
-type Ot {
-  id: ID
-  otNumber: String
-  description: String
-  
-}
-type Query {
-  test: String
-  ots: [Ot]
-  ot(id: String): Ot
-}
-`;
 
-const resolvers = {
-  Query:{
-    test: ()=>"Hola mundo",
-    ots: ()=>[],
-    ot: id => ({id:"TEST"})
-  }
-}
 const server = new ApolloServer({
-  typeDefs:[ typeDefs],
-  resolvers,
+  typeDefs:[ otTypeDefs],
+  resolvers:[otResolvers],
   introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== 'production', //Evita que se sepa cómo es la API en producción
   
   
