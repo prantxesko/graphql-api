@@ -5,7 +5,8 @@
   "description": "Graphql wrapper for Cobertec API",
   "main": "index.js",
   "scripts": {
-    "start": "node --watch ./index.js",
+    "start": "node ./index.js",
+    "dev": "node --watch ./index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

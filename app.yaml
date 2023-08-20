@@ -1,0 +1,5 @@
+runtime: nodejs18
+
+env_variables:
+  USERNAME: "HERJAI_USER"
+  PASSWORD: "9dMon0QhE6lNOkjS0KWI"
