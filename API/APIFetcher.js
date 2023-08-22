@@ -26,6 +26,7 @@ export default class APIFecther {
   }
   async makeRequest(query) {
     try {
+      // this.#urlList.map(url => console.log(url + (query ? `?${query}` : ""), this.#requestParams));
       const promises = this.#urlList.map(url => fetch(url + (query ? `?${query}` : ""), this.#requestParams));
       const response = await Promise.any(promises);
       if (!response.ok) throw { message: `${response.status}: ${response.statusText}` };

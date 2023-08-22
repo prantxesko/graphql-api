@@ -1,6 +1,9 @@
 const enviroment = process.env.NODE_ENV == "production" ? process.env : await import("./credentials.js");
 
+
 const { USERNAME, PASSWORD } = enviroment;
+
+
 
 import config from "./config.js";
 import APIFecther from "./APIFetcher.js";
@@ -24,7 +27,7 @@ export default class API {
 
     const { data, error } = await tokenFetcher.makeRequest();
 
-    if (error) throw "Error initialaizing API with credentials";
+    if (error) throw error;
     this.#tokenObj = data;
     for (let endpoint in config) {
       this.#endpoints[endpoint] = new Endpoint(endpoint, this.#tokenObj.access_token);
@@ -39,6 +42,6 @@ export default class API {
 try {
   await API.init();
 } catch (error) {
-  console.log(error);
+  console.log("Error origen: "+ error);
   console.log("Error iniciando la API. Comprueba que las variables de entorno USERNAME Y PASSWORD estén definidas");
 }
