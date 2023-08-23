@@ -1,4 +1,4 @@
-export default class APIFecther {
+export default class APIFether {
   #hostList = ["http://192.168.24.204:8083/", "https://api.her-jai.com/"];
   #urlList;
   #requestParams = {
@@ -8,11 +8,12 @@ export default class APIFecther {
   };
   #query="";
   constructor(url) {
-    this.setUrl(url)
+    this.#setUrl(url)
   }
 
-  setUrl(url=""){
+  #setUrl(url=""){
     this.#urlList = this.#hostList.map(host => host + url);
+    return this;
   }
 
   setToken(tokenStr) {
@@ -22,9 +23,10 @@ export default class APIFecther {
 
   setQuery(queryStr){
     this.#query=`?${queryStr}`;
+    return this;
   }
 
-  set body(data) {
+  setBody(data) {
     this.#requestParams.body = data;
     return this;
   }
@@ -33,19 +35,21 @@ export default class APIFecther {
     this.#requestParams.method = method;
     return this;
   }
-  async makeRequest(tokenStr) {
+  async makeRequest(trace) {
+    let result={};
     try {
-      if(tokenStr) this.#requestParams.headers.authorization = tokenStr;
-       this.#urlList.map(url => console.log(url+this.#query , this.#requestParams));
+    if (trace) this.#urlList.map(url => console.log(url+this.#query , this.#requestParams));
 
       const promises = this.#urlList.map(url => fetch(url+this.#query , this.#requestParams));
       const response = await Promise.any(promises);
+       if(trace) console.log("RESPONSE: ",response.status, response.statusText);
       if (!response.ok) throw { code: response.status, message: response.statusText };
-      return { data: await response.json() };
+      result.data=  await response.json() ;
     } catch (error) {
-      return { error };
+      result.error =error;
     }finally{
       this.#query="";
+      return result;
     }
     
   }

@@ -1,33 +1,103 @@
-import APIFecther from "./APIFetcher.js";
+import APIFetcher from "./APIFetcher.js";
 
-const enviroment = process.env.NODE_ENV?.toLowerCase()=="production"  ? process.env : await import("../config.js");
+const enviroment =
+  process.env.NODE_ENV?.toLowerCase() == "production"
+    ? process.env
+    : await import("../env.js");
 
-const {FINAL_URL, ID} = enviroment;
-console.log("env", enviroment)
+const { FINAL_URL, ID, USERNAME, PASSWORD } = enviroment;
+
+//console.log("env", enviroment)
+
+/*
+Devolver un tipo response
+{
+  data (si error distinto de 401)
+  error
+}
+
+
+*/
 
 export default class Endpoint {
-  #apiFetcher;
-  #id; 
+  #apiFetcher = new APIFetcher(`api/${FINAL_URL}`);
   #data;
- 
+  #lastUpdate;
 
-  constructor() {
-    this.#apiFetcher = new APIFecther(`api/${FINAL_URL}`);
-    this.#id = ID;
-
-    // console.log(this.#apiFetcher);
+  async init() {
+    const body = new URLSearchParams();
+    body.append("username", USERNAME);
+    body.append("password", PASSWORD);
+    body.append("grant_type", "password");
+    let response = await new APIFetcher("ObtenerToken").setBody(body).makeRequest();
+    let { data, error } = response;
+    if (error) throw error;
+    const { access_token: tokenStr } = data;
+    ({ data, error } = await this.#apiFetcher
+      .setBody(null)
+      .setToken(tokenStr)
+      .makeRequest());
+    if (error) throw error;
+    this.#data = data;
+    this.#lastUpdate = new Date().toLocaleString();
+    return this;
   }
-  async refreshData(){
 
+  async #refreshData(tokenStr) {
+    //Solo se llama si ya existe data
+    const { data, error } = await this.#apiFetcher
+      .setToken(tokenStr)
+      .setQuery(`?lastUpdate=${this.#lastUpdate}`)
+      .makeRequest();
+    //if(!error) this.#lastUpdate = new Date().toLocaleString();
+    return { data, error };
   }
-  async getData(tokenStr="") {
-    //Aquí tenemos que incluir los refrescos y control de errores en clase extendida
-    let response;
-    if (!this.#data) {
-      response = await this.#apiFetcher.makeRequest(tokenStr);
-      //this.#data = response.data; //A AGREGAR CUANDO REFRESQUEMOS
+
+  async getData(tokenStr = "") {
+    if (!this.#data)
+      throw { message: "Use init() method before trying to get data" };
+    // El endpoint no admite identificadoresp por lo que la única forma de gestionar eliminados es llamada completa
+    if (!ID) {
+      const { data, error } = await this.#apiFetcher
+        .setToken(tokenStr)
+        .makeRequest();
+      if (error && error.code == "401") return {error};
+      if (!error) {
+        this.#data = data;
+        this.#lastUpdate = new Date().toLocaleString();
+      }
+      return { data: this.#data, lastUpdate: this.#lastUpdate, error }; // Puede devolver error
+    } else {
+      const {data: updatedData, updateError} = await this.#apiFetcher
+      .setQuery(`lastUpdate=${this.#lastUpdate}`)
+      .setToken(tokenStr)
+      .makeRequest();
+      const {data:ids, error:idsError}= await new APIFetcher(`api/${FINAL_URL}/identificadores`)
+      .setToken(tokenStr)
+      .makeRequest();
+      // Si cualquiera de las peticiones en unauthorized (deberían se ambas) return
+      if(updateError?.code == 401 ||idsError?.code == 401) return {error: error || idsError};
+      // Sin no hay ningún error actualizamos y/o eliminamos lo borrado
+      if(!updateError && !idsError){
+        //Creamos un mapa con los ids vigentes;
+        const mapedData = new Map(ids.map( id=> [id,true]));
+        // console.log(mapedData)
+        // Recorremos la data actual y metemos en el mapa las que estén en los ids (no han sido borradas)
+        for(let el of this.#data){
+          //guardamos en el mapa las ots no borradas
+          const elId = el[ID];
+          if(!mapedData.get(elId)) mapedData.set(elId, el);
+        }
+        // Actualizamos o añadimos las actualizadas
+        for(let el of updatedData){
+          const elId = el[ID];
+          mapedData.set(elId, el);
+        }
+        console.log(mapedData)
+        this.#data = Array.from(mapedData.values());
+        this.#lastUpdate = new Date().toLocaleString();
+      }
+      return { data: this.#data, lastUpdate: this.#lastUpdate, error: updateError || idsError }; // Puede devolver error
     }
-    return response; // Puede devolver error
   }
- 
 }

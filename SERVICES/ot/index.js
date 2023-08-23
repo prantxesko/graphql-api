@@ -1,19 +1,15 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
-import { GraphQLError } from "graphql";
-import APIFecther from "./API/APIFetcher.js";
-
-import {token} from "./API/token.js";
 
 
 
 
-const endpoint = new Endpoint("ot");
-//console.log(await endpoint.getData(tokenStr));
 
-const fetcher = new APIFecther("api/ot");
-console.log("fecher",await fetcher.setToken(token.access_token).makeRequest())
+
+const endpoint = await new Endpoint().init();
+
+
 
 export const typeDefs = `
   type Ot{
@@ -40,8 +36,18 @@ export const typeDefs = `
     FechaCierre: String
     FechaRevision: String
   }
-  type Query{
+  type Error{
+    code: String
+    message: String
+  }
+  
+  type Response {
     ots: [Ot]
+    lastUpdate: String
+    error: Error
+  }
+  type Query{
+    otQuery: Response
   }
   `;
 
@@ -50,12 +56,13 @@ export const typeDefs = `
 
 export const resolvers = {
   Query: {
-    ots:async (parent,args,{tokenStr})=>{
-      const {data, error}= await endpoint.getData(tokenStr);
-      if (error) throw new GraphQLError(error.message || "Desconocido",{
-        extensions: {code: error.code}
-      })
-      return data || null;
+    otQuery:async (parent,args,{tokenStr})=>{
+      //console.log(tokenStr)
+     const response = await endpoint.getData(tokenStr);
+      //console.log("response",response)
+      const {data, lastUpdate, error} = response;
+    
+      return {ots:data, lastUpdate, error }
     },
   }
 }
@@ -75,8 +82,8 @@ const { url } = await startStandaloneServer(server, {
     //Tiene que recibir una authorization "Bearer ..." para acceder a la API de Expertis
     // Añadimos un import condicional para local
     if(process.env.NODE_ENV?.toLowerCase()!=="production"){
-      const{ token:{access_token} }= await import("./API/token.js");
-      return {tokenStr: `Bearer ${access_token}`};
+      const{ token:{access_token:tokenStr} }= await import("./API/token.js");
+      return {tokenStr};
     }
     return { tokenStr: req.headers.authorization };
   },
