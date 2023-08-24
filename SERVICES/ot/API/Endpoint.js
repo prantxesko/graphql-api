@@ -86,14 +86,14 @@ export default class Endpoint {
         for(let el of this.#data){
           //guardamos en el mapa las ots no borradas
           const elId = el[ID];
-          if(!mapedData.get(elId)) mapedData.set(elId, el);
+          if(mapedData.get(elId)) {mapedData.set(elId, el);}
         }
         // Actualizamos o añadimos las actualizadas
         for(let el of updatedData){
           const elId = el[ID];
           mapedData.set(elId, el);
         }
-        console.log(mapedData)
+        //console.log(mapedData)
         this.#data = Array.from(mapedData.values());
         this.#lastUpdate = new Date().toLocaleString();
       }

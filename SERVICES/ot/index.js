@@ -1,15 +1,9 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
-
-
-
-
-
+import { GraphQLError } from "graphql";
 
 const endpoint = await new Endpoint().init();
-
-
 
 export const typeDefs = `
   type Ot{
@@ -41,13 +35,22 @@ export const typeDefs = `
     message: String
   }
   
-  type Response {
+  type otCollectionResponse {
     ots: [Ot]
     lastUpdate: String
     error: Error
   }
+  type otResponse{
+    ot: Ot
+    lastUpdate: String
+    error: Error
+  }
   type Query{
-    otQuery: Response
+    otQuery: otCollectionResponse
+    otSearch (search: String!): otCollectionResponse
+    otById(id:Int!): otResponse
+    otByNumber(number: String!): otResponse
+
   }
   `;
 
@@ -56,16 +59,31 @@ export const typeDefs = `
 
 export const resolvers = {
   Query: {
-    otQuery:async (parent,args,{tokenStr})=>{
+    otQuery: async (parent, args, { tokenStr }) => {
       //console.log(tokenStr)
-     const response = await endpoint.getData(tokenStr);
-      //console.log("response",response)
-      const {data, lastUpdate, error} = response;
-    
-      return {ots:data, lastUpdate, error }
+      const { data, lastUpdate, error } = await endpoint.getData(tokenStr);
+      return { ots: data, lastUpdate, error };
     },
-  }
-}
+    otById: async (_, { id }, { tokenStr }) => {
+      console.log("otByID")
+      //Actualizamos la data
+      const { data, lastUpdate, error }= await endpoint.getData(tokenStr);
+      const ot = data ? data.find(({IDOT})=> IDOT == id) :null;
+      return { ot, lastUpdate, error};
+    },
+    otByNumber: async (_, { number }, { tokenStr }) => {
+      //Actualizamos la data
+      const { data, lastUpdate, error }= await endpoint.getData(tokenStr);
+      const ot = data ? data.find(({NROT})=> NROT == number) :null;
+      return { ot, lastUpdate, error};
+    },
+    otSearch: async (_, { search }, { tokenStr }) => {
+       //Actualizamos la data
+       const { data, lastUpdate, error }= await endpoint.getData(tokenStr);
+       const ot = data ? data.find(({NROT})=> NROT == number) :null;
+    },
+  },
+};
 
 const server = new ApolloServer({
   typeDefs,
@@ -79,17 +97,19 @@ const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
     // De some asinchronous task like get user with req.headers.authorization
     //console.log("req", req.headers.authorization)
-    //Tiene que recibir una authorization "Bearer ..." para acceder a la API de Expertis
-    // Añadimos un import condicional para local
-    if(process.env.NODE_ENV?.toLowerCase()!=="production"){
-      const{ token:{access_token:tokenStr} }= await import("./API/token.js");
-      return {tokenStr};
+    // throw new GraphQLError("MY_MESSAGE", {
+      //   extensions: { code: 'YOUR_ERROR_CODE'},
+      // });
+      //Tiene que recibir una authorization (solo token) para acceder a la API de Expertis
+      // Añadimos un import condicional para local
+    if (process.env.NODE_ENV?.toLowerCase() !== "production") {
+      const {
+        token: { access_token: tokenStr },
+      } = await import("./API/token.js");
+      return { tokenStr };
     }
     return { tokenStr: req.headers.authorization };
   },
 });
 
 console.log(`🚀 Server ready at ${url}`);
-
-
-
