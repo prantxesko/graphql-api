@@ -3,9 +3,11 @@ import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
 import { GraphQLError } from "graphql";
 
-const DEFAULT_PORT=4001;
+const DEFAULT_PORT=4002;
 
 let endpoint, endpointError;
+
+
 
 //Inicio del servicio. Error si no puede acceder a la API de Cobertec
 
@@ -30,29 +32,13 @@ try {
 }
 
 export const typeDefs = `
-  type Ot{
-    IDOT: ID
-    NROT: String
-    IDOTOrigen: ID
-    IDOTSuperPadre: ID      
-    DescOT: String
-    IDTipoOT: String        
-    IDEstadoOT: String      
-    RefPedidoCliente: String
-    IDCliente: String       
-    DescCliente: String     
-    IDObra: String
-    IDActivo: String
-    DescActivo: String
-    IDZona: String
-    DescZona: String
-    coordenadasOT: String
-    IDOperarioSolicitante: String
-    FechaSolicitud: String
-    FechaPlanificacion: String
-    FechaInicio: String
-    FechaCierre: String
-    FechaRevision: String
+  type Operario{
+    IOperario: ID
+    Nombre: String  
+    Apellidos: String
+    FechaAlta: String
+    DescOperario: String
+   
   }
   type Error{
     code: String
@@ -61,31 +47,30 @@ export const typeDefs = `
   
   type CollectionResponse {
     count: Int!
-    ots: [Ot]
+    operarios: [Operario]
     lastUpdate: String
     error: Error
   }
   type Response{
-    ot: Ot
+    operario: Operario
     lastUpdate: String
     error: Error
   }
   type Search{
-    ot: Ot
+    operario: Operario
     fieldName: String!
     fieldValue: String!
   }
   type SearchResponse{
     count: Int!
-    ots: [Search]
+    operarios: [Search]
     lastUpdate: String
     error: Error
   }
   type Query{
     query: CollectionResponse
     search (search: String!): SearchResponse
-    otById(id:Int!): Response
-    otByNumber(number: String!): Response
+   
 
   }
   `;
@@ -95,31 +80,23 @@ export const typeDefs = `
 
 export const resolvers = {
   Query: {
-    query: async (parent, args, { data:ots, lastUpdate, error }) => {
-      return { count:ots.length, ots, lastUpdate, error };
+    query: async (parent, args, { data, lastUpdate, error }) => {
+      return { count:data.length, operarios:data, lastUpdate, error };
     },
-    otById: async (_, { id }, { data, lastUpdate, error }) => {
-      console.log("otByID");
-      const ot = data ? data.find(({ IDOT }) => IDOT == id) : null;
-      return {  ot, lastUpdate, error };
-    },
-    otByNumber: async (_, { number }, { data, lastUpdate, error }) => {
-      const ot = data ? data.find(({ NROT }) => NROT == number) : null;
-      return { ot, lastUpdate, error };
-    },
+   
     search: async (_, { search }, { data, lastUpdate, error }) => {
-      const ots = [];
-      for(let ot of data){
-        for(let fieldName in ot){
-          const fieldValue = ot[fieldName];
+      const result = [];
+      for(let el of data){
+        for(let fieldName in el){
+          const fieldValue = el[fieldName];
           if(fieldValue?.toString() && fieldValue.toString().toLowerCase().includes(search.toLowerCase())){
             //console.log(fieldValue)
-            ots.push({ot, fieldName, fieldValue:fieldValue.toString()});
+            result.push({el, fieldName, fieldValue:fieldValue.toString()});
             break;
           }
         }
       }
-      return {count:ots.length, ots, lastUpdate, error}
+      return {count:result.length, operarios:result, lastUpdate, error}
     },
   },
 };
@@ -154,7 +131,6 @@ const { url } = await startStandaloneServer(server, {
       throw new GraphQLError("Unauthorized", {
         extensions: { code: "401" },
       });
-
     return { data, lastUpdate, error };
   },
 });

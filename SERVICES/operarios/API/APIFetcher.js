@@ -1,7 +1,7 @@
 import host from "./host.js"
 
 
-export default class APIFetcher {
+export default class APIFether {
   #hostList = host;
   #urlList;
   #requestParams = {
