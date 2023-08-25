@@ -2,6 +2,8 @@ import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
 import { GraphQLError } from "graphql";
+import { typeDefs } from "./typedefs.js";
+import { resolvers } from "./resolvers.js";
 
 const DEFAULT_PORT = 4002;
 
@@ -25,78 +27,6 @@ try {
     }
   }
 }
-
-export const typeDefs = `
-  type Operario{
-    IDOperario: ID
-    Nombre: String  
-    Apellidos: String
-    FechaAlta: String
-    DescOperario: String
-   
-  }
-  type Error{
-    code: String
-    message: String
-  }
-  
-  type CollectionResponse {
-    count: Int!
-    operarios: [Operario]
-    lastUpdate: String
-    error: Error
-  }
-  type Response{
-    operario: Operario
-    lastUpdate: String
-    error: Error
-  }
-  type Search{
-    operario: Operario
-    fieldName: String!
-    fieldValue: String!
-  }
-  type SearchResponse{
-    count: Int!
-    operarios: [Search]
-    lastUpdate: String
-    error: Error
-  }
-  type Query{
-    query: CollectionResponse
-    search (search: String!): SearchResponse
-    operarioById (id: String!): Response
-   
-
-  }
-  `;
-
-// Lo ideal sería añadir aquí una APIFecher y gestionar desde el resolver la data y el refresco.
-// Podríamos importar los types de un archivo para no tener que acceder al código
-
-export const resolvers = {
-  Query: {
-    query: async (_, __, { data, lastUpdate, error }) => ({ count: data.length, operarios: data, lastUpdate, error }),
-
-    search: async (_, { search }, { data, lastUpdate, error }) => {
-      const result = [];
-      for (let el of data) {
-        for (let fieldName in el) {
-          const fieldValue = el[fieldName];
-          if (fieldValue?.toString() && fieldValue.toString().toLowerCase().includes(search.toLowerCase())) {
-            result.push({ operario: el, fieldName, fieldValue: fieldValue.toString() });
-            break;
-          }
-        }
-      }
-      return { count: result.length, operarios: result, lastUpdate, error };
-    },
-    operarioById: async (_, { id }, { data, lastUpdate, error }) => {
-      const operario = data ? data.find(({ IDOperario }) => IDOperario == id) : null;
-      return { operario, lastUpdate, error };
-    },
-  },
-};
 
 const server = new ApolloServer({
   typeDefs,

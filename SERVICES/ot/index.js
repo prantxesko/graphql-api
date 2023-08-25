@@ -2,12 +2,8 @@ import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
 import { GraphQLError } from "graphql";
-import { createRequire } from "node:module";
-const require = createRequire(import.meta.url);
-const express = require("express");
-const cors = require("cors");
-const app = express();
-app.use(cors());
+import { resolvers } from "./resolvers.js";
+import { typeDefs } from "./typedefs.js";
 
 const DEFAULT_PORT = 4001;
 
@@ -31,97 +27,6 @@ try {
     }
   }
 }
-
-export const typeDefs = `
-  type Ot{
-    IDOT: ID
-    NROT: String
-    IDOTOrigen: ID
-    IDOTSuperPadre: ID      
-    DescOT: String
-    IDTipoOT: String        
-    IDEstadoOT: String      
-    RefPedidoCliente: String
-    IDCliente: String       
-    DescCliente: String     
-    IDObra: String
-    IDActivo: String
-    DescActivo: String
-    IDZona: String
-    DescZona: String
-    coordenadasOT: String
-    IDOperarioSolicitante: String
-    FechaSolicitud: String
-    FechaPlanificacion: String
-    FechaInicio: String
-    FechaCierre: String
-    FechaRevision: String
-  }
-  type Error{
-    code: String
-    message: String
-  }
-  
-  type CollectionResponse {
-    count: Int!
-    ots: [Ot]
-    lastUpdate: String
-    error: Error
-  }
-  type Response{
-    ot: Ot
-    lastUpdate: String
-    error: Error
-  }
-  type Search{
-    ot: Ot
-    fieldName: String!
-    fieldValue: String!
-  }
-  type SearchResponse{
-    count: Int!
-    ots: [Search]
-    lastUpdate: String
-    error: Error
-  }
-  type Query{
-    query: CollectionResponse
-    search (search: String!): SearchResponse
-    otById(id:Int!): Response
-    otByNumber(number: String!): Response
-
-  }
-  `;
-
-export const resolvers = {
-  Query: {
-    query: async (parent, args, { data, lastUpdate, error }) => {
-      return { count: data.length, ots: data, lastUpdate, error };
-    },
-    otById: async (_, { id }, { data, lastUpdate, error }) => {
-      const ot = data ? data.find(({ IDOT }) => IDOT == id) : null;
-      return { ot, lastUpdate, error };
-    },
-    otByNumber: async (_, { number }, { data, lastUpdate, error }) => {
-      const ot = data ? data.find(({ NROT }) => NROT == number) : null;
-      return { ot, lastUpdate, error };
-    },
-    search: async (_, { search }, { data, lastUpdate, error }) => {
-      const result = [];
-      for (let el of data) {
-        for (let fieldName in el) {
-          const fieldValue = el[fieldName];
-          // console.log(fieldName, fieldValue, search);
-          if (fieldValue?.toString() && fieldValue.toString().toLowerCase().includes(search.toLowerCase())) {
-            result.push({ ot: el, fieldName, fieldValue: fieldValue.toString() });
-            break;
-          }
-        }
-      }
-      return { count: result.length, ots: result, lastUpdate, error };
-    },
-  },
-};
 
 const server = new ApolloServer({
   typeDefs,
