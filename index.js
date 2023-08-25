@@ -13,8 +13,7 @@ import { typeDefs as oprTypeDefs, resolvers as oprResolvers } from "./GRAPHQL/op
 const server = new ApolloServer({
   typeDefs: [otTypeDefs, oprTypeDefs],
   resolvers: [otResolvers, oprResolvers],
-  introspection: true,
-  //introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== 'production', //Evita que se sepa cómo es la API en producción
+  introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== "production", //Evita que se sepa cómo es la API en producción
 });
 
 const { url } = await startStandaloneServer(server, {

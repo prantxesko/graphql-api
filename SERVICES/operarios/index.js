@@ -3,11 +3,9 @@ import { startStandaloneServer } from "@apollo/server/standalone";
 import Endpoint from "./API/Endpoint.js";
 import { GraphQLError } from "graphql";
 
-const DEFAULT_PORT=4002;
+const DEFAULT_PORT = 4002;
 
 let endpoint, endpointError;
-
-
 
 //Inicio del servicio. Error si no puede acceder a la API de Cobertec
 
@@ -22,10 +20,7 @@ try {
     try {
       endpoint = await new Endpoint().init();
     } catch (error) {
-      console.log(
-        "Error iniciando el endpoint de ots tercer (último) intento ",
-        error
-      );
+      console.log("Error iniciando el endpoint de ots tercer (último) intento ", error);
       endpointError = error;
     }
   }
@@ -33,7 +28,7 @@ try {
 
 export const typeDefs = `
   type Operario{
-    IOperario: ID
+    IDOperario: ID
     Nombre: String  
     Apellidos: String
     FechaAlta: String
@@ -70,6 +65,7 @@ export const typeDefs = `
   type Query{
     query: CollectionResponse
     search (search: String!): SearchResponse
+    operarioById (id: String!): Response
    
 
   }
@@ -80,23 +76,24 @@ export const typeDefs = `
 
 export const resolvers = {
   Query: {
-    query: async (parent, args, { data, lastUpdate, error }) => {
-      return { count:data.length, operarios:data, lastUpdate, error };
-    },
-   
+    query: async (_, __, { data, lastUpdate, error }) => ({ count: data.length, operarios: data, lastUpdate, error }),
+
     search: async (_, { search }, { data, lastUpdate, error }) => {
       const result = [];
-      for(let el of data){
-        for(let fieldName in el){
+      for (let el of data) {
+        for (let fieldName in el) {
           const fieldValue = el[fieldName];
-          if(fieldValue?.toString() && fieldValue.toString().toLowerCase().includes(search.toLowerCase())){
-            //console.log(fieldValue)
-            result.push({el, fieldName, fieldValue:fieldValue.toString()});
+          if (fieldValue?.toString() && fieldValue.toString().toLowerCase().includes(search.toLowerCase())) {
+            result.push({ operario: el, fieldName, fieldValue: fieldValue.toString() });
             break;
           }
         }
       }
-      return {count:result.length, operarios:result, lastUpdate, error}
+      return { count: result.length, operarios: result, lastUpdate, error };
+    },
+    operarioById: async (_, { id }, { data, lastUpdate, error }) => {
+      const operario = data ? data.find(({ IDOperario }) => IDOperario == id) : null;
+      return { operario, lastUpdate, error };
     },
   },
 };
@@ -104,29 +101,27 @@ export const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  introspection: true,
-  //introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== 'production', //Evita que se sepa cómo es la API en producción
+  introspection: (process.env.NODE_ENV ?? "").toLowerCase() !== "production", //Evita que se sepa cómo es la API en producción
 });
-
+let reqCount = 0;
 const { url } = await startStandaloneServer(server, {
   listen: { port: process.env.PORT || DEFAULT_PORT },
   context: async ({ req }) => {
+    console.log("Petición nº: ", ++reqCount);
+    // console.log(req.body);
     if (endpointError)
-      throw new GraphQLError(
-        "Se ha producido un error intentando iniciar el servicio",
-        {
-          extensions: { code: "500" },
-        }
-      );
+      throw new GraphQLError("Se ha producido un error intentando iniciar el servicio", {
+        extensions: { code: "500" },
+      });
     //Tiene que recibir una authorization (solo token) para acceder a la API de Expertis
     // Añadimos un import condicional para local
     let tokenStr = req.headers.authorization;
     if (process.env.NODE_ENV?.toLowerCase() !== "production") {
       const { token } = await import("./API/token.js");
-      
+
       tokenStr = token.access_token;
     }
-    const { data, lastUpdate, error } = await endpoint.getData(tokenStr );
+    const { data, lastUpdate, error } = await endpoint.getData(tokenStr);
     if (error?.code == "401")
       throw new GraphQLError("Unauthorized", {
         extensions: { code: "401" },

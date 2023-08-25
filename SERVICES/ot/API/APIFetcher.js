@@ -1,5 +1,4 @@
-import host from "./host.js"
-
+import host from "./host.js";
 
 export default class APIFetcher {
   #hostList = host;
@@ -9,12 +8,12 @@ export default class APIFetcher {
     headers: {},
     redirect: "follow",
   };
-  #query="";
+  #query = "";
   constructor(url) {
-    this.#setUrl(url)
+    this.#setUrl(url);
   }
 
-  #setUrl(url=""){
+  #setUrl(url = "") {
     this.#urlList = this.#hostList.map(host => host + url);
     return this;
   }
@@ -24,8 +23,8 @@ export default class APIFetcher {
     return this;
   }
 
-  setQuery(queryStr){
-    this.#query=`?${queryStr}`;
+  setQuery(queryStr) {
+    this.#query = `?${queryStr}`;
     return this;
   }
 
@@ -39,21 +38,20 @@ export default class APIFetcher {
     return this;
   }
   async makeRequest(trace) {
-    let result={};
+    let result = {};
     try {
-    if (trace) this.#urlList.map(url => console.log(url+this.#query , this.#requestParams));
+      if (trace) this.#urlList.map(url => console.log(url + this.#query, "\n", this.#requestParams));
 
-      const promises = this.#urlList.map(url => fetch(url+this.#query , this.#requestParams));
+      const promises = this.#urlList.map(url => fetch(url + this.#query, this.#requestParams));
       const response = await Promise.any(promises);
-       if(trace) console.log("RESPONSE: ",response.status, response.statusText);
+      if (trace) console.log("RESPONSE: ", response.status, response.statusText);
       if (!response.ok) throw { code: response.status, message: response.statusText };
-      result.data=  await response.json() ;
+      result.data = await response.json();
     } catch (error) {
-      result.error =error;
-    }finally{
-      this.#query="";
+      result.error = error;
+    } finally {
+      this.#query = "";
       return result;
     }
-    
   }
 }
