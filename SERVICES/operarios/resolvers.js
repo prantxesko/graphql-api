@@ -1,6 +1,6 @@
 export const resolvers = {
   Query: {
-    query: async (_, __, { data, lastUpdate, error }) => ({ count: data.length, operarios: data, lastUpdate, error }),
+    getAll: async (_, __, { data, lastUpdate, error }) => ({ count: data.length, operarios: data, lastUpdate, error }),
 
     search: async (_, { search }, { data, lastUpdate, error }) => {
       const result = [];

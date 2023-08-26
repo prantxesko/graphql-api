@@ -36,7 +36,7 @@ export const typeDefs = `
     error: Error
   }
   type Query{
-    query: CollectionResponse
+    getAll: CollectionResponse
     search (search: String!): SearchResponse
     searchByField(fieldName: String!, fieldValue:String!): CollectionResponse
    
