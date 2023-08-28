@@ -21,7 +21,11 @@
   },
   "homepage": "https://github.com/prantxesko/graphql-api#readme",
   "dependencies": {
+    "@apollo/client": "^3.8.1",
     "@apollo/server": "^4.9.1",
     "graphql": "^16.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
